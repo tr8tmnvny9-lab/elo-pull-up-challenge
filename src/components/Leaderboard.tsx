@@ -112,7 +112,10 @@ const SwipeableRow: React.FC<SwipeableRowProps> = ({ player, rank, allPlayers, o
         <div className="relative group overflow-hidden bg-white">
             {/* Delete Action Layer */}
             <div
-                className="absolute inset-y-0 right-0 w-20 bg-red-500 flex items-center justify-center cursor-pointer"
+                className={clsx(
+                    "absolute inset-y-0 right-0 w-20 bg-red-500 flex items-center justify-center cursor-pointer transition-opacity",
+                    translateX === 0 ? "opacity-0" : "opacity-100"
+                )}
                 onClick={() => {
                     onDelete?.(player);
                     resetSwipe();
@@ -132,8 +135,8 @@ const SwipeableRow: React.FC<SwipeableRowProps> = ({ player, rank, allPlayers, o
                 onTouchMove={handleTouchMove}
                 onTouchEnd={handleTouchEnd}
                 className={clsx(
-                    "relative flex items-center bg-white border-b border-transparent transition-colors z-10",
-                    rank === 1 ? "bg-yellow-50/30 hover:bg-yellow-50/60" : "hover:bg-slate-50"
+                    "relative flex items-center border-b border-transparent transition-colors z-10",
+                    rank === 1 ? "bg-[#fefce8] hover:bg-[#fef9c3]" : "bg-white hover:bg-slate-50"
                 )}
             >
                 <div className="px-6 py-4 w-16 text-center">
@@ -153,12 +156,12 @@ const SwipeableRow: React.FC<SwipeableRowProps> = ({ player, rank, allPlayers, o
                         <div className="font-semibold text-slate-900 group-hover:text-blue-600 transition-colors truncate">
                             {player.name}
                         </div>
-                        <div className="text-xs text-slate-500 flex items-center gap-2 whitespace-nowrap overflow-hidden">
+                        <div className="text-xs text-slate-500 flex items-center gap-2">
                             <span>{player.gender === 'male' ? 'M' : 'F'}, {player.age}y</span>
                             <span className="w-1 h-1 rounded-full bg-slate-300" />
-                            <span>{player.startWeight}kg</span>
+                            <span>Start: {player.startWeight}kg</span>
                             <span className="px-1.5 py-0.5 rounded bg-slate-100 text-slate-600 font-mono text-[10px]">
-                                M:{player.multiplier.toFixed(1)}
+                                M: {player.multiplier.toFixed(1)}
                             </span>
                         </div>
                     </div>
