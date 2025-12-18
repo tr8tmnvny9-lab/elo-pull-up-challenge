@@ -144,7 +144,9 @@ function App() {
             endDate={challengeEndDate}
             onSave={(d) => {
               setChallengeEndDate(d);
-              setCurrentView('dashboard');
+              // Keep the state update but let user navigate back manually or via dashboard?
+              // The user prompted they want it to work after setting. 
+              // Maybe they want immediate feedback.
             }}
             onBack={() => setCurrentView('dashboard')}
           />
@@ -188,15 +190,20 @@ function Dashboard({ players, endDate, onAddPlayer }: { players: Player[], endDa
   const daysLeft = () => {
     if (!endDate) return "Not Set";
 
-    // Adding T00:00:00 ensures YYYY-MM-DD is parsed as LOCAL midnight, not UTC
-    const end = new Date(endDate + 'T00:00:00');
+    // Parse components explicitly to avoid timezone ambiguity
+    const parts = endDate.split('-');
+    if (parts.length !== 3) return "Error";
+    const year = parseInt(parts[0]);
+    const month = parseInt(parts[1]);
+    const day = parseInt(parts[2]);
+
+    const end = new Date(year, month - 1, day, 0, 0, 0, 0);
     const now = new Date();
     now.setHours(0, 0, 0, 0);
 
     if (isNaN(end.getTime())) return "Error";
 
     const diffTime = end.getTime() - now.getTime();
-    // One day in ms
     const msInDay = 1000 * 60 * 60 * 24;
 
     // Result is the number of calendar days from today

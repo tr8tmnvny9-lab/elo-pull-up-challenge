@@ -1,5 +1,5 @@
 import React from 'react';
-import { Calendar, Save, ArrowLeft } from 'lucide-react';
+import { Calendar, Save, ArrowLeft, Activity } from 'lucide-react';
 
 interface SettingsPageProps {
     endDate: string;
@@ -9,10 +9,13 @@ interface SettingsPageProps {
 
 export const SettingsPage: React.FC<SettingsPageProps> = ({ endDate, onSave, onBack }) => {
     const [date, setDate] = React.useState(endDate);
+    const [isSaved, setIsSaved] = React.useState(false);
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
         onSave(date);
+        setIsSaved(true);
+        setTimeout(() => setIsSaved(false), 3000);
     };
 
     return (
@@ -58,8 +61,17 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({ endDate, onSave, onB
                             type="submit"
                             className="w-full py-4 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold shadow-lg shadow-blue-500/20 active:scale-[0.98] transition-all flex items-center justify-center gap-2"
                         >
-                            <Save className="w-5 h-5" />
-                            Save Configuration
+                            {isSaved ? (
+                                <>
+                                    <Activity className="w-5 h-5 animate-pulse" />
+                                    Configuration Saved!
+                                </>
+                            ) : (
+                                <>
+                                    <Save className="w-5 h-5" />
+                                    Save Configuration
+                                </>
+                            )}
                         </button>
                     </div>
                 </form>
