@@ -187,12 +187,21 @@ function App() {
 function Dashboard({ players, endDate, onAddPlayer }: { players: Player[], endDate: string, onAddPlayer: () => void }) {
   const daysLeft = () => {
     if (!endDate) return "Not Set";
-    const end = new Date(endDate);
+
+    // Adding T00:00:00 ensures YYYY-MM-DD is parsed as LOCAL midnight, not UTC
+    const end = new Date(endDate + 'T00:00:00');
     const now = new Date();
-    // Normalize to midnight to avoid issues with time of day
     now.setHours(0, 0, 0, 0);
+
+    if (isNaN(end.getTime())) return "Error";
+
     const diffTime = end.getTime() - now.getTime();
-    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    // One day in ms
+    const msInDay = 1000 * 60 * 60 * 24;
+
+    // Result is the number of calendar days from today
+    const diffDays = Math.round(diffTime / msInDay);
+
     return diffDays >= 0 ? diffDays : 0;
   };
 
