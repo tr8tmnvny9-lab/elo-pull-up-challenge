@@ -195,6 +195,10 @@ const SwipeableRow: React.FC<SwipeableRowProps> = ({ player, rank, allPlayers, o
                                 style={{ width: `${(player.grindScore / (player.powerScore + player.grindScore)) * 100}%` }}
                             />
                         </div>
+                        <div className="flex justify-between text-[10px] uppercase font-bold tracking-tighter">
+                            <span className="text-blue-600">{Math.round(player.powerScore / 2)} Pwr</span>
+                            <span className="text-emerald-600">{Math.round(player.grindScore / 2)} Grd</span>
+                        </div>
                     </div>
                 </div>
 
