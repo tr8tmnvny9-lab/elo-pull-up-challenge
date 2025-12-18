@@ -146,7 +146,7 @@ function App() {
 
         {currentView === 'rules' && (
           <div className="max-w-4xl mx-auto">
-            <RulesPage />
+            <RulesPage grindWeight={grindWeight} endDate={challengeEndDate} />
           </div>
         )}
 
@@ -299,7 +299,7 @@ function Dashboard({ players, endDate, grindWeight, onAddPlayer, onDeletePlayer 
             </div>
             <h3 className="font-bold text-lg mb-2 relative z-10">The Grind Matters</h3>
             <p className="text-indigo-100 text-sm mb-4 relative z-10">
-              50% of your score comes from beating your past self.
+              {Math.round(grindWeight * 100)}% of your score comes from beating your past self.
               Every rep above your baseline is worth massive points!
             </p>
           </div>
