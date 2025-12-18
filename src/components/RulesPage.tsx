@@ -1,6 +1,4 @@
-import React from 'react';
-import { BookOpen, Scale, Dumbbell, Zap, Clock, Info } from 'lucide-react';
-import { Calendar } from 'lucide-react';
+import { BookOpen, Scale, Dumbbell, Zap, Clock, Info, Calendar } from 'lucide-react';
 
 interface RulesPageProps {
     grindWeight?: number;
