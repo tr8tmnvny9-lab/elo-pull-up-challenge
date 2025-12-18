@@ -2,20 +2,25 @@ import { useState, useEffect } from 'react';
 import { INITIAL_PLAYERS } from './mockData';
 import { Leaderboard } from './components/Leaderboard';
 import type { Player, Gender } from './types';
-import { Plus, Activity, BookOpen, Calculator, X, Save, UserPlus } from 'lucide-react';
+import { Plus, Activity, BookOpen, Calculator, X, Save, UserPlus, Settings as SettingsIcon, Clock } from 'lucide-react';
 import { ScoreChart } from './components/ScoreChart';
 import { RulesPage } from './components/RulesPage';
 import { ScoreCalculator } from './components/ScoreCalculator';
+import { SettingsPage } from './components/SettingsPage';
 import eloLogo from './assets/elo-logo.png';
 import { calculateMultiplier } from './utils/scoring';
 
-type View = 'dashboard' | 'rules' | 'calculator';
+type View = 'dashboard' | 'rules' | 'calculator' | 'settings';
 
 function App() {
   // Load from LocalStorage or fall back to Initial Mock Data
   const [players, setPlayers] = useState<Player[]>(() => {
     const saved = localStorage.getItem('elo-players');
-    return saved ? JSON.parse(saved) : INITIAL_PLAYERS; // Keep mock data for demo if empty
+    return saved ? JSON.parse(saved) : INITIAL_PLAYERS;
+  });
+
+  const [challengeEndDate, setChallengeEndDate] = useState<string>(() => {
+    return localStorage.getItem('elo-challenge-end') || '';
   });
 
   const [currentView, setCurrentView] = useState<View>('dashboard');
@@ -26,6 +31,10 @@ function App() {
   useEffect(() => {
     localStorage.setItem('elo-players', JSON.stringify(players));
   }, [players]);
+
+  useEffect(() => {
+    localStorage.setItem('elo-challenge-end', challengeEndDate);
+  }, [challengeEndDate]);
 
   const handleAddPlayer = (newPlayer: Player) => {
     setPlayers(prev => [...prev, newPlayer]);
@@ -43,11 +52,6 @@ function App() {
       };
 
       const updatedLogs = [...p.logs, newLog];
-
-      // Update max reps logic 
-      // Note: currentReps should be the max of all lifetime logs, 
-      // but logic might vary if you want "current max" vs "all time max".
-      // Based on provided types, currentReps is "highest reps achieved so far".
       const newCurrentReps = Math.max(p.currentReps, reps);
 
       return {
@@ -92,6 +96,12 @@ function App() {
               icon={<BookOpen className="w-4 h-4" />}
               label="The Rules"
             />
+            <NavButton
+              active={currentView === 'settings'}
+              onClick={() => setCurrentView('settings')}
+              icon={<SettingsIcon className="w-4 h-4" />}
+              label="Settings"
+            />
 
             <div className="h-6 w-px bg-slate-200 mx-2 hidden sm:block"></div>
 
@@ -112,6 +122,7 @@ function App() {
         {currentView === 'dashboard' && (
           <Dashboard
             players={players}
+            endDate={challengeEndDate}
             onAddPlayer={() => setIsAddPlayerModalOpen(true)}
           />
         )}
@@ -126,6 +137,17 @@ function App() {
           <div className="max-w-4xl mx-auto">
             <ScoreCalculator />
           </div>
+        )}
+
+        {currentView === 'settings' && (
+          <SettingsPage
+            endDate={challengeEndDate}
+            onSave={(d) => {
+              setChallengeEndDate(d);
+              setCurrentView('dashboard');
+            }}
+            onBack={() => setCurrentView('dashboard')}
+          />
         )}
 
       </main>
@@ -146,7 +168,7 @@ function App() {
         />
       )}
 
-      {/* Validation Message for small screens if needed (optional) */}
+      {/* Mobile Log Button */}
       <div className="fixed bottom-6 right-6 sm:hidden">
         <button
           onClick={() => setIsLogModalOpen(true)}
@@ -162,23 +184,46 @@ function App() {
 }
 
 // Sub-component for Dashboard to keep App clean
-function Dashboard({ players, onAddPlayer }: { players: Player[], onAddPlayer: () => void }) {
+function Dashboard({ players, endDate, onAddPlayer }: { players: Player[], endDate: string, onAddPlayer: () => void }) {
+  const daysLeft = () => {
+    if (!endDate) return "Not Set";
+    const end = new Date(endDate);
+    const now = new Date();
+    // Normalize to midnight to avoid issues with time of day
+    now.setHours(0, 0, 0, 0);
+    const diffTime = end.getTime() - now.getTime();
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    return diffDays >= 0 ? diffDays : 0;
+  };
+
+  const daysLabel = () => {
+    if (!endDate) return "Configure in Settings";
+    const left = daysLeft();
+    if (typeof left === 'string') return left;
+    return left === 1 ? "Day Remaining" : "Days Remaining";
+  };
+
+  const leftValue = daysLeft();
+
   return (
     <div className="animate-in fade-in duration-500 space-y-8">
       {/* Hero / Stat overview */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <StatCard
-          label="Total Pull-Ups"
-          value={players.reduce((sum, p) => sum + p.currentReps, 0).toLocaleString()}
+          label="Days Left"
+          value={leftValue.toString()}
+          subValue={daysLabel()}
           color="blue"
+          icon={<Clock className="w-4 h-4" />}
         />
         <StatCard
           label="Current Leader"
           value={players.length > 0
-            ? players.sort((a, b) => b.currentReps - a.currentReps)[0].name
+            ? [...players].sort((a, b) => b.currentReps - a.currentReps)[0].name
             : "-"}
           color="emerald"
           subValue="Most Reps"
+          icon={<Activity className="w-4 h-4" />}
         />
         <button
           onClick={onAddPlayer}
@@ -198,11 +243,8 @@ function Dashboard({ players, onAddPlayer }: { players: Player[], onAddPlayer: (
           <Leaderboard players={players} />
         </div>
         <div className="lg:col-span-1 space-y-8">
-          <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-6">
-            <h3 className="font-bold text-slate-800 mb-4 text-sm">Score Composition</h3>
-            <div className="h-64">
-              <ScoreChart players={players} />
-            </div>
+          <div className="bg-transparent">
+            <ScoreChart players={players} />
           </div>
 
           <div className="bg-gradient-to-br from-indigo-600 to-violet-700 rounded-xl p-6 text-white shadow-lg relative overflow-hidden">
@@ -239,7 +281,7 @@ function NavButton({ active, onClick, icon, label }: { active: boolean, onClick:
   )
 }
 
-function StatCard({ label, value, color, subValue }: { label: string, value: string, color: 'blue' | 'emerald' | 'purple', subValue?: string }) {
+function StatCard({ label, value, color, subValue, icon }: { label: string, value: string, color: 'blue' | 'emerald' | 'purple', subValue?: string, icon?: any }) {
   const colors = {
     blue: 'bg-blue-50 border-blue-100 text-blue-600 text-blue-900',
     emerald: 'bg-emerald-50 border-emerald-100 text-emerald-600 text-emerald-900',
@@ -253,7 +295,10 @@ function StatCard({ label, value, color, subValue }: { label: string, value: str
 
   return (
     <div className={`${bgClass} p-6 rounded-2xl border ${borderClass} relative overflow-hidden`}>
-      <div className={`${labelClass} font-semibold text-xs uppercase tracking-wider mb-1`}>{label}</div>
+      <div className="flex justify-between items-start mb-1">
+        <div className={`${labelClass} font-semibold text-xs uppercase tracking-wider`}>{label}</div>
+        {icon && <div className={`${labelClass} opacity-50`}>{icon}</div>}
+      </div>
       <div className={`text-3xl font-black ${valueClass}`}>
         {value}
       </div>
@@ -366,7 +411,7 @@ function AddPlayerModal({ onClose, onSubmit }: {
       startWeight,
       baselineReps,
       multiplier,
-      currentReps: 0, // Starts at 0
+      currentReps: 0,
       logs: []
     };
 
