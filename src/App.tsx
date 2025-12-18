@@ -26,6 +26,7 @@ function App() {
   const [currentView, setCurrentView] = useState<View>('dashboard');
   const [isLogModalOpen, setIsLogModalOpen] = useState(false);
   const [isAddPlayerModalOpen, setIsAddPlayerModalOpen] = useState(false);
+  const [playerToDelete, setPlayerToDelete] = useState<Player | null>(null);
 
   // Persistence Effect
   useEffect(() => {
@@ -39,6 +40,11 @@ function App() {
   const handleAddPlayer = (newPlayer: Player) => {
     setPlayers(prev => [...prev, newPlayer]);
     setIsAddPlayerModalOpen(false);
+  };
+
+  const handleDeletePlayer = (id: string) => {
+    setPlayers(prev => prev.filter(p => p.id !== id));
+    setPlayerToDelete(null);
   };
 
   const handleLogScore = (playerId: string, reps: number) => {
@@ -124,6 +130,7 @@ function App() {
             players={players}
             endDate={challengeEndDate}
             onAddPlayer={() => setIsAddPlayerModalOpen(true)}
+            onDeletePlayer={setPlayerToDelete}
           />
         )}
 
@@ -170,6 +177,14 @@ function App() {
         />
       )}
 
+      {playerToDelete && (
+        <DeleteConfirmationModal
+          player={playerToDelete}
+          onClose={() => setPlayerToDelete(null)}
+          onConfirm={() => handleDeletePlayer(playerToDelete.id)}
+        />
+      )}
+
       {/* Mobile Log Button */}
       <div className="fixed bottom-6 right-6 sm:hidden">
         <button
@@ -186,7 +201,12 @@ function App() {
 }
 
 // Sub-component for Dashboard to keep App clean
-function Dashboard({ players, endDate, onAddPlayer }: { players: Player[], endDate: string, onAddPlayer: () => void }) {
+function Dashboard({ players, endDate, onAddPlayer, onDeletePlayer }: {
+  players: Player[],
+  endDate: string,
+  onAddPlayer: () => void,
+  onDeletePlayer: (player: Player) => void
+}) {
   const daysLeft = () => {
     if (!endDate) return "Not Set";
 
@@ -256,7 +276,7 @@ function Dashboard({ players, endDate, onAddPlayer }: { players: Player[], endDa
       {/* Leaderboard and Charts */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         <div className="lg:col-span-2">
-          <Leaderboard players={players} />
+          <Leaderboard players={players} onDelete={onDeletePlayer} />
         </div>
         <div className="lg:col-span-1 space-y-8">
           <div className="bg-transparent">
@@ -519,6 +539,45 @@ function AddPlayerModal({ onClose, onSubmit }: {
             Create Profile
           </button>
         </form>
+      </div>
+    </div>
+  );
+}
+
+function DeleteConfirmationModal({ player, onClose, onConfirm }: {
+  player: Player,
+  onClose: () => void,
+  onConfirm: () => void
+}) {
+  return (
+    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[100] flex items-center justify-center p-4 animate-in fade-in duration-200">
+      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm p-6">
+        <div className="flex flex-col items-center text-center space-y-4">
+          <div className="w-16 h-16 bg-red-50 rounded-full flex items-center justify-center">
+            <X className="w-8 h-8 text-red-500" />
+          </div>
+          <div>
+            <h2 className="text-xl font-bold text-slate-900">Remove Player?</h2>
+            <p className="text-slate-500 text-sm mt-1">
+              Are you sure you want to remove <strong>{player.name}</strong> from the challenge? This action cannot be undone.
+            </p>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-2 gap-3 mt-8">
+          <button
+            onClick={onClose}
+            className="py-3 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl font-bold transition-colors"
+          >
+            Cancel
+          </button>
+          <button
+            onClick={onConfirm}
+            className="py-3 bg-red-500 hover:bg-red-600 text-white rounded-xl font-bold transition-colors shadow-lg shadow-red-200"
+          >
+            Delete
+          </button>
+        </div>
       </div>
     </div>
   );
