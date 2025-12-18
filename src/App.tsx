@@ -23,6 +23,11 @@ function App() {
     return localStorage.getItem('elo-challenge-end') || '';
   });
 
+  const [grindWeight, setGrindWeight] = useState<number>(() => {
+    const saved = localStorage.getItem('elo-grind-weight');
+    return saved ? parseFloat(saved) : 0.5;
+  });
+
   const [currentView, setCurrentView] = useState<View>('dashboard');
   const [isLogModalOpen, setIsLogModalOpen] = useState(false);
   const [isAddPlayerModalOpen, setIsAddPlayerModalOpen] = useState(false);
@@ -36,6 +41,10 @@ function App() {
   useEffect(() => {
     localStorage.setItem('elo-challenge-end', challengeEndDate);
   }, [challengeEndDate]);
+
+  useEffect(() => {
+    localStorage.setItem('elo-grind-weight', grindWeight.toString());
+  }, [grindWeight]);
 
   const handleAddPlayer = (newPlayer: Player) => {
     setPlayers(prev => [...prev, newPlayer]);
@@ -129,6 +138,7 @@ function App() {
           <Dashboard
             players={players}
             endDate={challengeEndDate}
+            grindWeight={grindWeight}
             onAddPlayer={() => setIsAddPlayerModalOpen(true)}
             onDeletePlayer={setPlayerToDelete}
           />
@@ -142,18 +152,17 @@ function App() {
 
         {currentView === 'calculator' && (
           <div className="max-w-4xl mx-auto">
-            <ScoreCalculator />
+            <ScoreCalculator grindWeight={grindWeight} />
           </div>
         )}
 
         {currentView === 'settings' && (
           <SettingsPage
             endDate={challengeEndDate}
-            onSave={(d) => {
+            grindWeight={grindWeight}
+            onSave={(d, w) => {
               setChallengeEndDate(d);
-              // Keep the state update but let user navigate back manually or via dashboard?
-              // The user prompted they want it to work after setting. 
-              // Maybe they want immediate feedback.
+              if (w !== undefined) setGrindWeight(w);
             }}
             onBack={() => setCurrentView('dashboard')}
           />
@@ -201,9 +210,10 @@ function App() {
 }
 
 // Sub-component for Dashboard to keep App clean
-function Dashboard({ players, endDate, onAddPlayer, onDeletePlayer }: {
+function Dashboard({ players, endDate, grindWeight, onAddPlayer, onDeletePlayer }: {
   players: Player[],
   endDate: string,
+  grindWeight: number,
   onAddPlayer: () => void,
   onDeletePlayer: (player: Player) => void
 }) {
@@ -276,11 +286,11 @@ function Dashboard({ players, endDate, onAddPlayer, onDeletePlayer }: {
       {/* Leaderboard and Charts */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         <div className="lg:col-span-2">
-          <Leaderboard players={players} onDelete={onDeletePlayer} />
+          <Leaderboard players={players} grindWeight={grindWeight} onDelete={onDeletePlayer} />
         </div>
         <div className="lg:col-span-1 space-y-8">
           <div className="bg-transparent">
-            <ScoreChart players={players} />
+            <ScoreChart players={players} grindWeight={grindWeight} />
           </div>
 
           <div className="bg-gradient-to-br from-indigo-600 to-violet-700 rounded-xl p-6 text-white shadow-lg relative overflow-hidden">

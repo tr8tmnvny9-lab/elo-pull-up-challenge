@@ -33,7 +33,7 @@ export const calculateMultiplier = (
 /**
  * Calculates the full score breakdown for a player.
  */
-export const calculateScore = (player: Player): ScoreBreakdown => {
+export const calculateScore = (player: Player, grindWeight: number = 0.5): ScoreBreakdown => {
     // Use the locked multiplier
     const M = player.multiplier;
 
@@ -46,8 +46,10 @@ export const calculateScore = (player: Player): ScoreBreakdown => {
     const difficultyModifier = Math.log10(player.baselineReps + 2);
     const grindScore = repIncrease * M * difficultyModifier;
 
-    // Part 3: Total Score = (S_p + S_i) / 2
-    const totalScore = (powerScore + grindScore) / 2;
+    // Part 3: Weighted Total Score
+    // Default is 0.5 (equal split)
+    const powerWeight = 1 - grindWeight;
+    const totalScore = (powerScore * powerWeight) + (grindScore * grindWeight);
 
     return {
         powerScore,
@@ -77,11 +79,12 @@ export const getMaxReps = (logs: { reps: number }[], baseline: number): number =
  */
 export const getNextPointTarget = (
     player: Player,
-    allPlayers: Player[]
+    allPlayers: Player[],
+    grindWeight: number = 0.5
 ): { targetLabel: string; targetScore: number; repsNeeded: number } | null => {
     // Sort players by score descending
     const sortedPlayers = [...allPlayers]
-        .map(p => ({ ...p, score: calculateScore(p).totalScore }))
+        .map(p => ({ ...p, score: calculateScore(p, grindWeight).totalScore }))
         .sort((a, b) => b.score - a.score);
 
     const myRankIndex = sortedPlayers.findIndex(p => p.id === player.id);
@@ -111,13 +114,18 @@ export const getNextPointTarget = (
     }
 
     // Calculate Reps Requirement
-    // Formula: R_new = ((2 * T_score / M) + (R_start * L)) / (1 + L)
+    // Formula: T_score = (M * R_new * (1-W)) + (M * (R_new - R_start) * L * W)
+    // T_score = M * R_new * (1-W) + M * R_new * L * W - M * R_start * L * W
+    // T_score + M * R_start * L * W = M * R_new * (1 - W + L * W)
+    // R_new = (T_score + M * R_start * L * W) / (M * (1 - W + L * W))
+
     const M = player.multiplier;
     const R_base = player.baselineReps;
     const L = Math.log10(R_base + 2);
+    const W = grindWeight;
 
-    const numerator = (2 * targetScore / M) + (R_base * L);
-    const denominator = 1 + L;
+    const numerator = targetScore + (M * R_base * L * W);
+    const denominator = M * (1 - W + (L * W));
 
     const calculatedReps = numerator / denominator;
 

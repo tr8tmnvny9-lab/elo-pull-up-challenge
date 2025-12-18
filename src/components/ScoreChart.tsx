@@ -5,15 +5,16 @@ import { calculateScore } from '../utils/scoring';
 
 interface ScoreChartProps {
     players: Player[];
+    grindWeight: number;
 }
 
-export const ScoreChart: React.FC<ScoreChartProps> = ({ players }) => {
+export const ScoreChart: React.FC<ScoreChartProps> = ({ players, grindWeight }) => {
     const data = players.map(p => {
-        const score = calculateScore(p);
+        const score = calculateScore(p, grindWeight);
         return {
             name: p.name,
-            Power: Math.round(score.powerScore / 2),
-            Grind: Math.round(score.grindScore / 2),
+            Power: Math.round(score.powerScore * (1 - grindWeight)),
+            Grind: Math.round(score.grindScore * grindWeight),
             Total: Math.round(score.totalScore),
         };
     }).sort((a, b) => b.Total - a.Total);

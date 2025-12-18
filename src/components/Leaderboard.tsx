@@ -6,18 +6,18 @@ import { Trophy, Dumbbell, Trash2 } from 'lucide-react';
 
 interface LeaderboardProps {
     players: Player[];
+    grindWeight: number;
     onDelete?: (player: Player) => void;
 }
 
-export const Leaderboard: React.FC<LeaderboardProps> = ({ players, onDelete }) => {
+export const Leaderboard: React.FC<LeaderboardProps> = ({ players, grindWeight, onDelete }) => {
     const sortedPlayers = useMemo(() => {
-        return [...players]
-            .map(p => {
-                const score = calculateScore(p);
-                return { ...p, ...score };
-            })
-            .sort((a, b) => b.totalScore - a.totalScore);
-    }, [players]);
+        return [...players].sort((a, b) => {
+            const scoreA = calculateScore(a, grindWeight).totalScore;
+            const scoreB = calculateScore(b, grindWeight).totalScore;
+            return scoreB - scoreA;
+        });
+    }, [players, grindWeight]);
 
     return (
         <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
@@ -44,9 +44,10 @@ export const Leaderboard: React.FC<LeaderboardProps> = ({ players, onDelete }) =
                         {sortedPlayers.map((player, index) => (
                             <SwipeableRow
                                 key={player.id}
-                                player={player as any}
+                                player={player}
                                 rank={index + 1}
                                 allPlayers={players}
+                                grindWeight={grindWeight}
                                 onDelete={onDelete}
                             />
                         ))}
@@ -58,20 +59,22 @@ export const Leaderboard: React.FC<LeaderboardProps> = ({ players, onDelete }) =
 };
 
 interface SwipeableRowProps {
-    player: Player & { totalScore: number; powerScore: number; grindScore: number };
+    player: Player;
     rank: number;
     allPlayers: Player[];
+    grindWeight: number;
     onDelete?: (player: Player) => void;
 }
 
-const SwipeableRow: React.FC<SwipeableRowProps> = ({ player, rank, allPlayers, onDelete }) => {
+const SwipeableRow: React.FC<SwipeableRowProps> = ({ player, rank, allPlayers, grindWeight, onDelete }) => {
     const [startX, setStartX] = useState<number | null>(null);
     const [translateX, setTranslateX] = useState(0);
     const [isSwiping, setIsSwiping] = useState(false);
     const [isMenuOpen, setIsMenuOpen] = useState(false);
     const rowRef = useRef<HTMLDivElement>(null);
 
-    const nextPoint = useMemo(() => getNextPointTarget(player, allPlayers), [player, allPlayers]);
+    const score = useMemo(() => calculateScore(player, grindWeight), [player, grindWeight]);
+    const nextPoint = useMemo(() => getNextPointTarget(player, allPlayers, grindWeight), [player, allPlayers, grindWeight]);
 
     const handleTouchStart = (e: React.TouchEvent) => {
         setStartX(e.touches[0].clientX);
@@ -169,7 +172,7 @@ const SwipeableRow: React.FC<SwipeableRowProps> = ({ player, rank, allPlayers, o
 
                 <div className="px-6 py-4 w-32 text-right shrink-0">
                     <div className="text-2xl font-bold text-slate-900 tracking-tight">
-                        {Math.round(player.totalScore).toLocaleString()}
+                        {Math.round(score.totalScore).toLocaleString()}
                     </div>
                     <div className="text-[10px] text-slate-400 font-bold uppercase tracking-tighter">POINTS</div>
                 </div>
@@ -188,16 +191,16 @@ const SwipeableRow: React.FC<SwipeableRowProps> = ({ player, rank, allPlayers, o
                         <div className="flex items-center gap-1 h-1.5 w-full bg-slate-100 rounded-full overflow-hidden">
                             <div
                                 className="h-full bg-blue-500 rounded-full"
-                                style={{ width: `${(player.powerScore / (player.powerScore + player.grindScore)) * 100}%` }}
+                                style={{ width: `${(score.powerScore * (1 - grindWeight) / score.totalScore) * 100}%` }}
                             />
                             <div
                                 className="h-full bg-emerald-500 rounded-full"
-                                style={{ width: `${(player.grindScore / (player.powerScore + player.grindScore)) * 100}%` }}
+                                style={{ width: `${(score.grindScore * grindWeight / score.totalScore) * 100}%` }}
                             />
                         </div>
                         <div className="flex justify-between text-[10px] uppercase font-bold tracking-tighter">
-                            <span className="text-blue-600">{Math.round(player.powerScore / 2)} Pwr</span>
-                            <span className="text-emerald-600">{Math.round(player.grindScore / 2)} Grd</span>
+                            <span className="text-blue-600">{Math.round(score.powerScore * (1 - grindWeight))} Pwr</span>
+                            <span className="text-emerald-600">{Math.round(score.grindScore * grindWeight)} Grd</span>
                         </div>
                     </div>
                 </div>

@@ -3,7 +3,7 @@ import { Calculator } from 'lucide-react';
 import { calculateMultiplier, calculateScore } from '../utils/scoring';
 import type { Gender, Player } from '../types';
 
-export function ScoreCalculator() {
+export function ScoreCalculator({ grindWeight = 0.5 }: { grindWeight?: number }) {
     const [weight, setWeight] = useState<number>(80);
     const [age, setAge] = useState<number>(30);
     const [gender, setGender] = useState<Gender>('male');
@@ -25,7 +25,7 @@ export function ScoreCalculator() {
         logs: []
     };
 
-    const score = calculateScore(mockPlayer);
+    const score = calculateScore(mockPlayer, grindWeight);
 
     return (
         <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-6 overflow-hidden relative">
@@ -121,11 +121,11 @@ export function ScoreCalculator() {
                     <div className="grid grid-cols-2 gap-2 text-center">
                         <div className="bg-white p-3 rounded-lg border border-slate-100 shadow-sm">
                             <div className="text-xs text-blue-600 font-semibold mb-1">POWER</div>
-                            <div className="text-xl font-bold text-slate-700">{score.powerScore.toFixed(0)}</div>
+                            <div className="text-xl font-bold text-slate-700">{Math.round(score.powerScore * (1 - grindWeight))}</div>
                         </div>
                         <div className="bg-white p-3 rounded-lg border border-slate-100 shadow-sm">
                             <div className="text-xs text-emerald-600 font-semibold mb-1">GRIND</div>
-                            <div className="text-xl font-bold text-slate-700">{score.grindScore.toFixed(0)}</div>
+                            <div className="text-xl font-bold text-slate-700">{Math.round(score.grindScore * grindWeight)}</div>
                         </div>
                     </div>
 
